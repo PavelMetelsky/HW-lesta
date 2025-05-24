@@ -1,0 +1,15 @@
+[Unit]
+Description=Flask App with Gunicorn
+After=network.target redis.service
+
+[Service]
+User=ubuntu
+Group=www-data
+WorkingDirectory=/home/ubuntu/Flask-app
+Environment="PATH=/home/ubuntu/Flask-app/venv/bin"
+Environment="REDIS_URL=redis://localhost:6379/0"
+ExecStart=/home/ubuntu/Flask-app/venv/bin/gunicorn --bind unix:/run/gunicorn/flask.sock --workers 4 --chdir src "run:app"
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

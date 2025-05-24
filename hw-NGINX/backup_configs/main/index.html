@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Main Page - Three Sites</title>
+    <style>
+        body { 
+            font-family: Arial; 
+            margin: 20px; 
+            background: #f0f0f0; 
+        }
+        h1 { 
+            text-align: center; 
+            color: #333; 
+        }
+        .container { 
+            display: flex; 
+            gap: 20px; 
+            margin-top: 20px; 
+        }
+        .site-frame {
+            flex: 1;
+            text-align: center;
+        }
+        .site-frame h3 {
+            margin: 10px 0;
+            color: #555;
+        }
+        iframe { 
+            width: 100%;
+            height: 500px; 
+            border: 2px solid #ccc; 
+            border-radius: 5px; 
+            background: white;
+        }
+        .info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 5px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Nginx Homework - Three Different Sites</h1>
+    
+    <div class="container">
+        <div class="site-frame">
+            <h3>Public Site (/open)</h3>
+            <iframe src="/open/" title="Public Site"></iframe>
+        </div>
+        
+        <div class="site-frame">
+            <h3>Protected Site (/close)</h3>
+            <iframe src="/close/" title="Protected Site"></iframe>
+        </div>
+        
+        <div class="site-frame">
+            <h3>Flask API (/flask)</h3>
+            <iframe src="/flask/swagger/" title="Flask API Documentation"></iframe>
+        </div>
+    </div>
+    
+    <div class="info">
+        <p><strong>URLs:</strong> 
+        /open (public) | 
+        /close (password: admin/admin) | 
+        /flask (API with JWT auth)</p>
+    </div>
+</body>
+</html>

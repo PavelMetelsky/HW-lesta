@@ -23,6 +23,7 @@ flowchart TD
             SITE1["/open<br>Public Site<br>/var/www/site1"]:::static
             SITE2["/close<br>Protected Site<br>/var/www/site2"]:::static
             HTPASSWD[".htpasswd<br>Basic Auth"]:::auth
+            IPALLOW["IP Whitelist<br>127.0.0.1<br>192.168.1.0/24<br>10.0.0.5"]:::auth
         end
         
         subgraph SYSTEMD["Systemd Services"]
@@ -38,20 +39,23 @@ flowchart TD
     
     CLIENT -->|HTTPS| NGINX_MAIN
     NGINX_MAIN -->|/open| SITE1
-    NGINX_MAIN -->|/close + auth| SITE2
+    NGINX_MAIN -->|/close + auth + IP check| SITE2
     NGINX_MAIN -->|/flask/*| SOCKET
     SOCKET --> FLASK_SERVICE
     FLASK_SERVICE -->|localhost:6379| REDIS
     REDIS --> REDIS_VOL
     SITE2 -.-> HTPASSWD
+    SITE2 -.-> IPALLOW
     NGINX_MAIN -.-> SSL
 ```
 
 ## 🚀 Access URLs
 
-- **Main Page**: https://37.9.53.237/
-- **Public Site**: https://37.9.53.237/open
-- **Protected Site**: https://37.9.53.237/close (login: admin, password: homework)
+- **Main Page**: https://37.9.53.237/ (displays all 3 sites in iframes)
+- **Public Site**: https://37.9.53.237/open (no authentication required)
+- **Protected Site**: https://37.9.53.237/close 
+  - Basic Auth: `admin` / `homework`
+  - IP Restriction: Only allowed from 127.0.0.1, 192.168.1.0/24, 10.0.0.5
 - **Flask API**: https://37.9.53.237/flask/
 - **Swagger UI**: https://37.9.53.237/flask/swagger/
 
@@ -86,8 +90,8 @@ flowchart TD
 └── flask-app.service            # Systemd service
 
 /var/www/
-├── main/                        # Main landing page
-│   └── index.html
+├── main/                        # Main landing page with 3 iframes
+│   └── index.html              # Shows all sites in one view
 ├── site1/                       # Public site (/open)
 │   └── index.html
 └── site2/                       # Protected site (/close)
@@ -105,6 +109,8 @@ flowchart TD
 - Serves static sites
 - Reverse proxy for Flask via Unix socket
 - Basic authentication for /close
+- IP-based access control for /close
+- Separate access/error logs for each location
 
 ### 2. **Flask Application (Systemd)**
 - Runs as systemd service `flask-app.service`
@@ -170,6 +176,10 @@ docker exec -it redis-flask redis-cli
 ```bash
 # Custom command to check all services
 check-flask
+
+# Check IP restrictions
+curl -I https://localhost/close/ -u admin:admin -k # Should work from localhost
+# From external IP will return 403 Forbidden
 ```
 
 ### Quick Restart
@@ -187,7 +197,14 @@ restart-flask
 
 ### Authentication
 - JWT tokens for API (secret in environment)
-- Basic auth for /close site (user: admin, pass: homework)
+- Basic auth for /close site (user: admin, pass: admin)
+
+### IP Restrictions
+- `/close` location restricted to:
+  - 127.0.0.1 (localhost)
+  - 192.168.1.0/24 (local network example)
+  - 10.0.0.5 (specific IP example)
+  - All other IPs receive 403 Forbidden
 
 ### Firewall
 ```bash
@@ -211,9 +228,11 @@ docker run -d --name grafana -p 3000:3000 grafana/grafana
 
 ### View Logs
 ```bash
-# Nginx access logs
-tail -f /var/log/nginx/flask_access.log
-tail -f /var/log/nginx/main_access.log
+# Nginx access logs (separate for each site)
+tail -f /var/log/nginx/main_access.log      # Main page
+tail -f /var/log/nginx/site1_access.log     # /open site
+tail -f /var/log/nginx/site2_access.log     # /close site
+tail -f /var/log/nginx/flask_access.log     # Flask API
 
 # Flask application logs
 sudo journalctl -u flask-app -f
@@ -247,6 +266,13 @@ docker logs -f redis-flask
    # Get new token via /flask/auth/login
    ```
 
+4. **403 Forbidden on /close**
+   ```bash
+   # Check if your IP is allowed in nginx config
+   sudo grep -A5 "location /close" /etc/nginx/sites-available/homework
+   # Add your IP if needed and reload nginx
+   ```
+
 ### Health Checks
 ```bash
 # Check all components
@@ -270,6 +296,19 @@ sudo systemctl restart flask-app
 sudo nano /var/www/site1/index.html
 sudo nano /var/www/site2/index.html
 # Changes apply immediately
+```
+
+### Add IP to Protected Site Access
+```bash
+# Edit nginx config
+sudo nano /etc/nginx/sites-available/homework
+
+# Find location /close and add your IP:
+# allow YOUR.IP.HERE;
+
+# Test and reload
+sudo nginx -t
+sudo systemctl reload nginx
 ```
 
 ### SSL Certificate Renewal
@@ -322,7 +361,10 @@ done
 
 ## 📝 Notes
 
-- This is a production-like setup optimized for a single VM
-- For high availability, consider multiple VMs with load balancer
+- This is a production-ready setup with full security features
+- Main page displays all three sites in iframes for easy access
+- IP restrictions implemented for administrative areas
+- Separate logging for each site component
 - Database persistence via Docker volume
 - Logs rotated automatically by systemd and logrotate
+- For high availability, consider multiple VMs with load balancer

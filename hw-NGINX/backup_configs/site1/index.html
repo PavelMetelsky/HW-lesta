@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Site 1 - Public</title>
+    <style>
+        body { background: #e8f5e9; padding: 20px; margin: 0; font-family: Arial; }
+        .content { background: white; padding: 20px; border-radius: 10px; }
+        h1 { color: #2e7d32; }
+    </style>
+</head>
+<body>
+    <div class="content">
+        <h1>Public Site</h1>
+        <p>This is the first site - accessible to everyone!</p>
+        <p>Current time: <span id="time"></span></p>
+        <ul>
+            <li>No authentication required</li>
+            <li>Loaded via iframe</li>
+            <li>Works over HTTPS</li>
+        </ul>
+    </div>
+    <script>
+        document.getElementById('time').textContent = new Date().toLocaleString();
+    </script>
+</body>
+</html>
