@@ -1,0 +1,108 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Swagger API for Golang Project DevOps Lesta start demo",
+        "title": "DevOps Lesta start demo",
+        "contact": {
+            "name": "API Support",
+            "email": "a_guryanov2@lesta.group"
+        },
+        "version": "0.0.1"
+    },
+    "basePath": "/",
+    "paths": {
+        "/api/v1/roll_dice": {
+            "post": {
+                "tags": [
+                    "API V1"
+                ],
+                "summary": "Бросить игральную кость",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.responseRoll"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/roll_statistic": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "API V1"
+                ],
+                "summary": "Статистика всех бросков кубика",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.responseStat"
+                        }
+                    }
+                }
+            }
+        },
+        "/ping": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "System"
+                ],
+                "summary": "Проверка доступности сервиса",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.healthCheckState"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "internal_api.Statistic": {
+            "type": "object",
+            "properties": {
+                "all_awg_roll": {
+                    "type": "number"
+                },
+                "all_count_roll": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api.healthCheckState": {
+            "type": "object",
+            "properties": {
+                "result": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api.responseRoll": {
+            "type": "object",
+            "properties": {
+                "error": {},
+                "result": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api.responseStat": {
+            "type": "object",
+            "properties": {
+                "error": {},
+                "result": {
+                    "$ref": "#/definitions/internal_api.Statistic"
+                }
+            }
+        }
+    }
+}

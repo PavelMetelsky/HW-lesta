@@ -1,0 +1,69 @@
+basePath: /
+definitions:
+  internal_api.Statistic:
+    properties:
+      all_awg_roll:
+        type: number
+      all_count_roll:
+        type: integer
+    type: object
+  internal_api.healthCheckState:
+    properties:
+      result:
+        type: string
+    type: object
+  internal_api.responseRoll:
+    properties:
+      error: {}
+      result:
+        type: integer
+    type: object
+  internal_api.responseStat:
+    properties:
+      error: {}
+      result:
+        $ref: '#/definitions/internal_api.Statistic'
+    type: object
+info:
+  contact:
+    email: a_guryanov2@lesta.group
+    name: API Support
+  description: Swagger API for Golang Project DevOps Lesta start demo
+  title: DevOps Lesta start demo
+  version: 0.0.1
+paths:
+  /api/v1/roll_dice:
+    post:
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.responseRoll'
+      summary: Бросить игральную кость
+      tags:
+      - API V1
+  /api/v1/roll_statistic:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.responseStat'
+      summary: Статистика всех бросков кубика
+      tags:
+      - API V1
+  /ping:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_api.healthCheckState'
+      summary: Проверка доступности сервиса
+      tags:
+      - System
+swagger: "2.0"
