@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  postgres_db:
+    image: postgres:16.1-alpine3.19
+    container_name: postgres_db
+    environment:
+      POSTGRES_DB: DB
+      POSTGRES_USER: USER_DB
+      POSTGRES_PASSWORD: PWD_DB
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U USER_DB -d DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  lesta_start_demo:
+    build: .
+    container_name: lesta_start_demo
+    environment:
+      DB_URL: postgres://USER_DB:PWD_DB@postgres_db:5432/DB
+      API_PORT: 8887
+    ports:
+      - "8887:8887"
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    ports:
+      - "8088:8088"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - lesta_start_demo
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridgev
