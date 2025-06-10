@@ -1,0 +1,88 @@
+pipeline {
+    agent any
+    
+    environment {
+        DOCKER_IMAGE = 'flask-api-exam'
+        DOCKER_TAG = "${BUILD_NUMBER}"
+        REMOTE_HOST = '37.9.53.237'
+        REMOTE_USER = 'ubuntu'
+        REMOTE_DIR = '/home/ubuntu/flask-api-prod'
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                echo 'Cloning repository...'
+                checkout scm
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                echo 'Building Docker image...'
+                sh """
+                    docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
+                    docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest
+                """
+            }
+        }
+        
+        stage('Test/Lint') {
+            steps {
+                echo 'Running linter...'
+                sh """
+                    docker run --rm ${DOCKER_IMAGE}:${DOCKER_TAG} \
+                    sh -c "pip install flake8 && flake8 app/ --max-line-length=120 --exclude=__pycache__"
+                """
+            }
+        }
+        
+        stage('Push') {
+            steps {
+                echo 'Saving Docker image...'
+                sh """
+                    docker save ${DOCKER_IMAGE}:latest | gzip > flask-api-exam.tar.gz
+                """
+            }
+        }
+        
+        stage('Deploy') {
+            steps {
+                echo 'Deploying to remote server...'
+                script {
+                    sh """
+                        # Создание директории на удаленном сервере
+                        ssh ${REMOTE_USER}@${REMOTE_HOST} 'mkdir -p ${REMOTE_DIR}'
+                        
+                        # Копирование файлов
+                        scp flask-api-exam.tar.gz ${REMOTE_USER}@${REMOTE_HOST}:~/
+                        scp docker-compose.yml ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DIR}/
+                        scp .env ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DIR}/
+                        
+                        # Развертывание
+                        ssh ${REMOTE_USER}@${REMOTE_HOST} '
+                            cd ${REMOTE_DIR}
+                            docker load < ~/flask-api-exam.tar.gz
+                            docker-compose down
+                            docker-compose up -d
+                            rm ~/flask-api-exam.tar.gz
+                        '
+                    """
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            echo 'Cleaning up...'
+            sh 'docker system prune -f'
+        }
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed!'
+        }
+    }
+}
